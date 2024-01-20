@@ -1,0 +1,43 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/index.js"></script>
+    <title>Lista de Productos en tiempo Real</title>
+  </head>
+  <body>
+
+    <div id="productListContainer">
+      <h1>Lista de Productos en tiempo Real</h1>
+      <ul id="productList"></ul>
+    </div>
+
+    <!-- Formulario para crear un nuevo producto -->
+    <form id="createProductForm">
+      <label for="title">Título:</label>
+      <input type="text" id="title" name="title" required />
+
+      <label for="description">Descripción:</label>
+      <input type="text" id="description" name="description" required />
+
+      <button type="submit">Crear Producto</button>
+    </form>
+    <!-- Formulario para eliminar un producto por ID -->
+    <form id="deleteProductForm">
+      <label for="productId">ID del Producto a Eliminar:</label>
+      <input type="number" id="productId" name="productId" required />
+
+      <button type="submit">Eliminar Producto</button>
+    </form>
+
+    <script>
+      const socket = io(); socket.on('updateProductsList', updatedProducts => {
+      const productList = document.getElementById('productList');
+      productList.innerHTML = ''; updatedProducts.forEach(product => { const
+      listItem = document.createElement('li'); listItem.textContent =
+      product.title; productList.appendChild(listItem); }); });
+    </script>
+
+  </body>
+</html>
