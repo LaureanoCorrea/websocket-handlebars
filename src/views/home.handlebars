@@ -1,0 +1,19 @@
+<!-- views/home.handlebars -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Productos home</title>
+</head>
+<body>
+    <h1>Lista de Productos home</h1>
+    <ul>
+        {{#each products}}
+            <li>{{title}} - {{description}} - {{price}} - {{stock}} - {{category}} - {{thumbnail}} - {{id}} - {{code}} </li>
+        {{/each}}
+    </ul>
+</body>
+</html>
+ 

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Time Products</title>
+</head>
+    <body>
+        <h1>Real Time Products</h1>
+        <ul>
+            {{#each products}}
+                <li>{{title}} - {{description}} - {{price}} - {{id}}</li>
+            {{/each}}
+        </ul>
+
+            <!--MENSAJE DE ERROR EN CASO DE ERROR EN LA CARGA DEL FORMULARIO-->
+        <h3 id="errorMessage" style="display: none; color: red;"></h3>
+
+            <!-- formulario de Agregar -->
+        <form id="addProductForm">
+            <input type="text" name="title" placeholder="Title">
+            <input type="text" name="description" placeholder="Description">
+            <input type="number" name="price" placeholder="Price">
+            <input type="text" name="thumbnail" placeholder="thumbnail">
+            <input type="text" name="code" placeholder="code">
+            <input type="number" name="stock" placeholder="stock">
+            <button type="submit">Agregar Producto</button>
+        </form>
+            <!-- Formulario para eliminar  -->
+        <form id="deleteProductForm">
+            <input type="number" name="productId" placeholder="ID del producto a eliminar">
+            <button type="submit">Eliminar Producto</button>
+        </form>
+
+        <script src="/socket.io/socket.io.js"></script>
+
+        <script>
+            const socket = io(); // Conectar al servidor WebSocket
+
+            // Escuchar eventos del servidor WebSocket
+            socket.on('updateProductsList', updatedProducts => {
+                const productList = document.querySelector('ul');
+                productList.innerHTML = ''; // Limpiar la lista de productos
+
+            // Agregar los productos actualizados a la lista
+                updatedProducts.forEach(product => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${product.title} - ${product.description} - ${product.price} - ${product.id}`;
+                    productList.appendChild(listItem);
+                });
+            });
+
+            //manejo de envio de formulario de carga
+                document.getElementById('addProductForm').addEventListener('submit', async (event) => {
+                event.preventDefault(); // Evitar el envío del formulario por defecto
+
+            // Obtener los datos del formulario
+                const formData = new FormData(event.target);
+                const title = formData.get('title');
+                const description = formData.get('description');
+                const price = formData.get('price');
+                const thumbnail = formData.get('thumbnail');
+                const code = formData.get('code');
+                const stock = formData.get('stock');
+
+                const errorMessage = validateFormData(title, description, price, thumbnail, code, stock);
+                    if (errorMessage) {
+                        document.getElementById('errorMessage').textContent = errorMessage;
+                        document.getElementById('errorMessage').style.display = 'block';
+                        return; 
+                    }
+
+            // Enviar los datos al servidor mediante una solicitud POST
+                const response = await fetch('/realtimeproducts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, description, price, thumbnail, code, stock })
+                });
+
+            // Actualizar la lista de productos si la solicitud fue exitosa
+                if (response.ok) {
+                    socket.emit('updateProducts');
+            // Vaciar el formulario
+                    document.getElementById('addProductForm').reset();
+                    document.getElementById('errorMessage').style.display = 'none';
+                } else {
+                    const errorMessage = await response.text();
+                    const errorElement = document.getElementById('error');
+                    errorElement.textContent = errorMessage;
+                    }
+            });
+
+            // manejo de envio de formulario de borrado
+                document.getElementById('deleteProductForm').addEventListener('submit', async (event) => {
+                event.preventDefault(); // Evitar el envío del formulario por defecto
+
+                const formData = new FormData(event.target);
+                const productId = formData.get('productId');
+
+            // Enviar los datos al servidor mediante una solicitud DELETE
+                try {
+                  const response = await fetch(`/api/products/${productId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    });
+
+                    if (response.ok) {
+                        console.log('Producto eliminado correctamente');
+                            socket.emit('updateProducts'); // Emitir evento para actualizar la lista de productos
+                            document.getElementById('deleteProductForm').reset();
+
+                    } else {
+                        console.error('Error al eliminar el producto');
+                    }
+                } catch (error) {
+                    console.error('Error de red:', error);
+                }
+            });
+            // Función para validar los datos del formulario
+        function validateFormData(title, description, price, thumbnail, code, stock) {
+            if (!title || !description || !price || !thumbnail || !code || !stock) {
+                return 'Todos los campos son obligatorios';
+            }
+
+            price = Number(price);
+            if (isNaN(price)) {
+                return 'El precio debe ser un número';
+            }
+
+            if (price <= 0) {
+                return 'El precio debe ser mayor a cero';
+            }
+
+            // Si todos los campos son válidos, retorna null
+            return null;
+        }
+        </script>
+    </body>
+</html>
